@@ -15,17 +15,12 @@ npm start      # 서버 실행 (http://localhost:3000)
 npm run dev    # 개발 모드 (--watch)
 ```
 
-## Architecture
+## Environment Setup
 
-```
-├── server.js          # Express 서버, API 엔드포인트
-├── database.js        # SQLite 데이터베이스 설정
-├── app.db             # SQLite 데이터 파일
-├── public/
-│   ├── index.html     # 메인 페이지
-│   ├── style.css      # 스타일
-│   └── app.js         # 클라이언트 로직
-└── .env               # 환경변수 (OPENROUTER_API_KEY)
+```bash
+cp .env.example .env
+# .env 파일에 OPENROUTER_API_KEY 설정
+# API 키 발급: https://openrouter.ai/keys
 ```
 
 ## API Endpoints
@@ -55,21 +50,5 @@ npm run dev    # 개발 모드 (--watch)
 ## UI Flow
 
 1. **Step 1**: 냉장고 사진 업로드 (드래그앤드롭 또는 클릭)
-2. **Step 2**: AI가 인식한 재료 확인/수정 + 레시피 옵션 선택 (요리종류, 난이도, 시간, 인원)
-3. **Step 3**: 추천 레시피 목록 표시
-   - 각 레시피 카드에 저장 버튼 (로그인 시)
-   - 레시피 클릭 시 상세 모달
-   - "다시 선택하기" / "처음으로" 버튼
-
-## Features
-
-- 회원가입/로그인 (JWT 인증)
-- 프로필 설정 (식단 유형, 알레르기, 선호 요리)
-- 레시피 저장/삭제
-- 저장된 레시피 목록 조회
-
-## Recent Updates
-
-- 레시피 생성 모델 변경: `deepseek/deepseek-r1-0528:free` → `google/gemma-3-27b-it:free` (타임아웃 문제 해결)
-- Step 3에 "처음으로" 버튼 추가
-- 레시피 카드에 직접 저장 버튼 추가
+2. **Step 2**: AI가 인식한 재료 확인/수정 + 레시피 옵션 선택
+3. **Step 3**: 추천 레시피 목록 → 저장/상세보기
