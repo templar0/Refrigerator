@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Database
+app.db
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Zip files
+*.zip
+
+# Temp files
+tmpclaude-*
+nul
+_ul
+
+# Test files
+test-*.js
+*.txt
+
+# Images
+*.jpg
+*.png
+*.jpeg
+
+# Old/unused files
+index.js
+PRD_*.md
