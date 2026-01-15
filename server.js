@@ -12,7 +12,21 @@ const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'fridge-recipe-secret-key';
+
+// Critical: JWT_SECRET 환경변수 필수 검증
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('❌ 오류: JWT_SECRET 환경변수가 설정되지 않았습니다.');
+  console.error('   .env 파일에 JWT_SECRET=your-secret-key 를 추가해주세요.');
+  process.exit(1);
+}
+
+// Critical: OPENROUTER_API_KEY 환경변수 검증
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+if (!OPENROUTER_API_KEY) {
+  console.warn('⚠️  경고: OPENROUTER_API_KEY가 설정되지 않았습니다.');
+  console.warn('   AI 기능을 사용하려면 .env 파일에 API 키를 추가해주세요.');
+}
 
 // Multer 설정
 const upload = multer({
@@ -114,7 +128,13 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/auth/me', authenticateToken, (req, res) => {
   const user = db.prepare('SELECT id, email, name, preferences FROM users WHERE id = ?').get(req.user.id);
   if (user) {
-    user.preferences = JSON.parse(user.preferences || '{}');
+    // Critical: JSON 파싱 에러 처리
+    try {
+      user.preferences = JSON.parse(user.preferences || '{}');
+    } catch (e) {
+      console.error('Preferences parse error:', e.message);
+      user.preferences = {};
+    }
   }
   res.json({ user });
 });
@@ -134,7 +154,13 @@ app.put('/api/users/profile', authenticateToken, (req, res) => {
     }
 
     const updatedUser = db.prepare('SELECT id, email, name, preferences FROM users WHERE id = ?').get(userId);
-    updatedUser.preferences = JSON.parse(updatedUser.preferences || '{}');
+    // Critical: JSON 파싱 에러 처리
+    try {
+      updatedUser.preferences = JSON.parse(updatedUser.preferences || '{}');
+    } catch (e) {
+      console.error('Preferences parse error:', e.message);
+      updatedUser.preferences = {};
+    }
 
     res.json({ user: updatedUser, message: '프로필이 업데이트되었습니다.' });
   } catch (error) {
@@ -172,10 +198,15 @@ app.get('/api/recipes/saved', authenticateToken, (req, res) => {
       'SELECT * FROM saved_recipes WHERE user_id = ? ORDER BY created_at DESC'
     ).all(req.user.id);
 
-    const parsed = recipes.map(r => ({
-      ...r,
-      recipe: JSON.parse(r.recipe)
-    }));
+    // Critical: JSON 파싱 에러 처리
+    const parsed = recipes.map(r => {
+      try {
+        return { ...r, recipe: JSON.parse(r.recipe) };
+      } catch (e) {
+        console.error('Recipe parse error for id', r.id, ':', e.message);
+        return { ...r, recipe: { name: '파싱 오류', description: '레시피 데이터 오류' } };
+      }
+    });
 
     res.json({ recipes: parsed });
   } catch (error) {
@@ -215,10 +246,15 @@ app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
     const mimeType = req.file.mimetype;
     const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
+    // API 키 검증
+    if (!OPENROUTER_API_KEY) {
+      return res.status(503).json({ error: 'AI 서비스가 설정되지 않았습니다. 관리자에게 문의해주세요.' });
+    }
+
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -299,10 +335,15 @@ app.post('/api/generate-recipe', async (req, res) => {
   ]
 }`;
 
+    // API 키 검증
+    if (!OPENROUTER_API_KEY) {
+      return res.status(503).json({ error: 'AI 서비스가 설정되지 않았습니다. 관리자에게 문의해주세요.' });
+    }
+
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

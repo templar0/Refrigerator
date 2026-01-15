@@ -1,3 +1,16 @@
+// ===== 보안: XSS 방어 =====
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  const div = document.createElement('div');
+  div.textContent = String(text);
+  return div.innerHTML;
+}
+
+// JSON을 안전하게 data 속성에 저장하기 위한 함수
+function safeJsonAttr(obj) {
+  return escapeHtml(JSON.stringify(obj));
+}
+
 // ===== 인증 관련 =====
 let currentUser = null;
 let authToken = localStorage.getItem('token');
@@ -302,12 +315,12 @@ async function loadSavedRecipes() {
     }
 
     savedRecipesList.innerHTML = data.recipes.map(item => `
-      <div class="saved-recipe-card" data-id="${item.id}">
-        <div class="info" data-recipe='${JSON.stringify(item.recipe)}'>
-          <h4>${item.recipe.name}</h4>
-          <span class="date">${new Date(item.created_at).toLocaleDateString('ko-KR')}</span>
+      <div class="saved-recipe-card" data-id="${escapeHtml(item.id)}">
+        <div class="info" data-recipe='${safeJsonAttr(item.recipe)}'>
+          <h4>${escapeHtml(item.recipe.name)}</h4>
+          <span class="date">${escapeHtml(new Date(item.created_at).toLocaleDateString('ko-KR'))}</span>
         </div>
-        <button class="delete-btn" data-id="${item.id}">🗑️</button>
+        <button class="delete-btn" data-id="${escapeHtml(item.id)}">🗑️</button>
       </div>
     `).join('');
 
@@ -467,7 +480,7 @@ function renderIngredients() {
   ingredientsList.innerHTML = ingredients.map((ing, idx) => `
     <div class="ingredient-tag">
       <input type="checkbox" checked data-index="${idx}">
-      <span>${ing}</span>
+      <span>${escapeHtml(ing)}</span>
       <button class="remove" data-index="${idx}">×</button>
     </div>
   `).join('');
@@ -556,11 +569,11 @@ function renderRecipes() {
 
   recipesContainer.innerHTML = recipes.map((recipe, idx) => `
     <div class="recipe-card" data-index="${idx}">
-      <h3>${recipe.name}</h3>
-      <p>${recipe.description}</p>
+      <h3>${escapeHtml(recipe.name)}</h3>
+      <p>${escapeHtml(recipe.description)}</p>
       <div class="recipe-meta">
-        <span>⏱️ ${recipe.cookingTime}분</span>
-        <span>📊 ${recipe.difficulty}</span>
+        <span>⏱️ ${escapeHtml(recipe.cookingTime)}분</span>
+        <span>📊 ${escapeHtml(recipe.difficulty)}</span>
       </div>
       ${currentUser ? `<button class="btn-save-card" data-index="${idx}">💾 저장</button>` : ''}
     </div>
@@ -614,16 +627,16 @@ function showRecipeDetail(recipe, showSave = true) {
   currentRecipe = recipe;
 
   const ingredientsList = recipe.ingredients?.map(ing =>
-    `<li>${ing.name}: ${ing.amount}</li>`
+    `<li>${escapeHtml(ing.name)}: ${escapeHtml(ing.amount)}</li>`
   ).join('') || '';
 
   const stepsList = recipe.steps?.map(step =>
-    `<li>${step}</li>`
+    `<li>${escapeHtml(step)}</li>`
   ).join('') || '';
 
   modalBody.innerHTML = `
-    <h2>${recipe.name}</h2>
-    <p class="description">${recipe.description}</p>
+    <h2>${escapeHtml(recipe.name)}</h2>
+    <p class="description">${escapeHtml(recipe.description)}</p>
 
     <h4>재료</h4>
     <ul>${ingredientsList}</ul>
@@ -633,7 +646,7 @@ function showRecipeDetail(recipe, showSave = true) {
 
     ${recipe.tips ? `
       <div class="tips-box">
-        <p>💡 ${recipe.tips}</p>
+        <p>💡 ${escapeHtml(recipe.tips)}</p>
       </div>
     ` : ''}
   `;
